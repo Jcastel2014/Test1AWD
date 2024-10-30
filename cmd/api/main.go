@@ -27,7 +27,7 @@ type serverConfig struct {
 type appDependencies struct {
 	config       serverConfig
 	logger       *slog.Logger
-	commentModel data.CommentModel
+	productModel data.ProductModel
 }
 
 func openDB(settings serverConfig) (*sql.DB, error) {
@@ -72,7 +72,7 @@ func main() {
 	appInstance := &appDependencies{
 		config:       settings,
 		logger:       logger,
-		commentModel: data.CommentModel{DB: db},
+		productModel: data.ProductModel{DB: db},
 	}
 
 	apiServer := &http.Server{

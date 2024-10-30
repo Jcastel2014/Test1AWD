@@ -11,8 +11,10 @@ import (
 
 func (a *appDependencies) createProduct(w http.ResponseWriter, r *http.Request) {
 	var incomingData struct {
-		Content string `json:"content"`
-		Author  string `json:"author"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Category    string `json:"category"`
+		Image_url   string `json:"image_url"`
 	}
 
 	err := a.readJSON(w, r, &incomingData)
@@ -21,31 +23,34 @@ func (a *appDependencies) createProduct(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	comment := &data.Comment{
-		Content: incomingData.Content,
-		Author:  incomingData.Author,
+	product := &data.Product{
+		Name:        incomingData.Name,
+		Description: incomingData.Description,
+		Category:    incomingData.Category,
+		Image_url:   incomingData.Image_url,
 	}
 
 	v := validator.New()
 
-	data.ValidateComment(v, comment)
+	// one sent to identify handler
+	data.ValidateProduct(v, product, 1)
 
 	if !v.IsEmpty() {
 		a.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = a.commentModel.Insert(comment)
+	err = a.productModel.Insert(product)
 	if err != nil {
 		a.serverErrResponse(w, r, err)
 		return
 	}
 
 	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/v1/comments/%d", comment.ID))
+	headers.Set("Location", fmt.Sprintf("/product/%d", product.ID))
 
 	data := envelope{
-		"comment": comment,
+		"product": product,
 	}
 
 	err = a.writeJSON(w, http.StatusCreated, data, headers)
@@ -58,7 +63,7 @@ func (a *appDependencies) createProduct(w http.ResponseWriter, r *http.Request) 
 	fmt.Fprintf(w, "%+v\n", incomingData)
 }
 
-func (a *appDependencies) displayCommentHandler(w http.ResponseWriter, r *http.Request) {
+func (a *appDependencies) displayProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := a.readIDParam(r)
 
 	if err != nil {
@@ -66,7 +71,7 @@ func (a *appDependencies) displayCommentHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	comment, err := a.commentModel.Get(id)
+	product, err := a.productModel.Get(id)
 
 	if err != nil {
 		switch {
@@ -80,7 +85,7 @@ func (a *appDependencies) displayCommentHandler(w http.ResponseWriter, r *http.R
 	}
 
 	data := envelope{
-		"comment": comment,
+		"product": product,
 	}
 
 	err = a.writeJSON(w, http.StatusOK, data, nil)
@@ -90,128 +95,128 @@ func (a *appDependencies) displayCommentHandler(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (a *appDependencies) updateCommentHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := a.readIDParam(r)
+// func (a *appDependencies) updateCommentHandler(w http.ResponseWriter, r *http.Request) {
+// 	id, err := a.readIDParam(r)
 
-	if err != nil {
-		a.notFoundResponse(w, r)
-		return
-	}
+// 	if err != nil {
+// 		a.notFoundResponse(w, r)
+// 		return
+// 	}
 
-	comment, err := a.commentModel.Get(id)
+// 	comment, err := a.commentModel.Get(id)
 
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			a.notFoundResponse(w, r)
-		default:
-			a.serverErrResponse(w, r, err)
-		}
+// 	if err != nil {
+// 		switch {
+// 		case errors.Is(err, data.ErrRecordNotFound):
+// 			a.notFoundResponse(w, r)
+// 		default:
+// 			a.serverErrResponse(w, r, err)
+// 		}
 
-		return
-	}
+// 		return
+// 	}
 
-	var incomingData struct {
-		Content *string `json:"content"`
-		Author  *string `json:"author"`
-	}
+// 	var incomingData struct {
+// 		Content *string `json:"content"`
+// 		Author  *string `json:"author"`
+// 	}
 
-	err = a.readJSON(w, r, &incomingData)
+// 	err = a.readJSON(w, r, &incomingData)
 
-	if err != nil {
-		a.badRequestResponse(w, r, err)
-		return
-	}
+// 	if err != nil {
+// 		a.badRequestResponse(w, r, err)
+// 		return
+// 	}
 
-	if incomingData.Content != nil {
-		comment.Content = *incomingData.Content
-	}
+// 	if incomingData.Content != nil {
+// 		comment.Content = *incomingData.Content
+// 	}
 
-	err = a.commentModel.Update(comment)
+// 	err = a.commentModel.Update(comment)
 
-	if err != nil {
-		a.serverErrResponse(w, r, err)
-		return
-	}
+// 	if err != nil {
+// 		a.serverErrResponse(w, r, err)
+// 		return
+// 	}
 
-	data := envelope{
-		"comment": comment,
-	}
+// 	data := envelope{
+// 		"comment": comment,
+// 	}
 
-	err = a.writeJSON(w, http.StatusOK, data, nil)
-	if err != nil {
-		a.serverErrResponse(w, r, err)
-		return
-	}
-}
+// 	err = a.writeJSON(w, http.StatusOK, data, nil)
+// 	if err != nil {
+// 		a.serverErrResponse(w, r, err)
+// 		return
+// 	}
+// }
 
-func (a *appDependencies) deleteCommentHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := a.readIDParam(r)
+// func (a *appDependencies) deleteCommentHandler(w http.ResponseWriter, r *http.Request) {
+// 	id, err := a.readIDParam(r)
 
-	if err != nil {
-		a.notFoundResponse(w, r)
-		return
-	}
+// 	if err != nil {
+// 		a.notFoundResponse(w, r)
+// 		return
+// 	}
 
-	err = a.commentModel.Delete(id)
+// 	err = a.commentModel.Delete(id)
 
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			a.notFoundResponse(w, r)
-		default:
-			a.serverErrResponse(w, r, err)
-		}
+// 	if err != nil {
+// 		switch {
+// 		case errors.Is(err, data.ErrRecordNotFound):
+// 			a.notFoundResponse(w, r)
+// 		default:
+// 			a.serverErrResponse(w, r, err)
+// 		}
 
-		return
-	}
+// 		return
+// 	}
 
-	data := envelope{
-		"message": "comment successfully deleted",
-	}
+// 	data := envelope{
+// 		"message": "comment successfully deleted",
+// 	}
 
-	err = a.writeJSON(w, http.StatusOK, data, nil)
-	if err != nil {
-		a.serverErrResponse(w, r, err)
-	}
-}
+// 	err = a.writeJSON(w, http.StatusOK, data, nil)
+// 	if err != nil {
+// 		a.serverErrResponse(w, r, err)
+// 	}
+// }
 
-func (a *appDependencies) listCommentsHandler(w http.ResponseWriter, r *http.Request) {
-	var queryParametersData struct {
-		Content string
-		Author  string
-		data.Filters
-	}
+// func (a *appDependencies) listCommentsHandler(w http.ResponseWriter, r *http.Request) {
+// 	var queryParametersData struct {
+// 		Content string
+// 		Author  string
+// 		data.Filters
+// 	}
 
-	queryParameters := r.URL.Query()
-	queryParametersData.Content = a.getSingleQueryParameters(queryParameters, "content", "")
-	queryParametersData.Author = a.getSingleQueryParameters(queryParameters, "author", "")
+// 	queryParameters := r.URL.Query()
+// 	queryParametersData.Content = a.getSingleQueryParameters(queryParameters, "content", "")
+// 	queryParametersData.Author = a.getSingleQueryParameters(queryParameters, "author", "")
 
-	v := validator.New()
+// 	v := validator.New()
 
-	queryParametersData.Filters.Page = a.getSingleIntegerParameters(queryParameters, "page", 1, v)
-	queryParametersData.Filters.PageSize = a.getSingleIntegerParameters(queryParameters, "page_size", 10, v)
+// 	queryParametersData.Filters.Page = a.getSingleIntegerParameters(queryParameters, "page", 1, v)
+// 	queryParametersData.Filters.PageSize = a.getSingleIntegerParameters(queryParameters, "page_size", 10, v)
 
-	data.ValidateFilters(v, queryParametersData.Filters)
-	if !v.IsEmpty() {
-		a.failedValidationResponse(w, r, v.Errors)
-		return
-	}
+// 	data.ValidateFilters(v, queryParametersData.Filters)
+// 	if !v.IsEmpty() {
+// 		a.failedValidationResponse(w, r, v.Errors)
+// 		return
+// 	}
 
-	comments, err := a.commentModel.GetAll(queryParametersData.Content, queryParametersData.Author, queryParametersData.Filters)
+// 	comments, err := a.commentModel.GetAll(queryParametersData.Content, queryParametersData.Author, queryParametersData.Filters)
 
-	if err != nil {
-		a.serverErrResponse(w, r, err)
-		return
-	}
+// 	if err != nil {
+// 		a.serverErrResponse(w, r, err)
+// 		return
+// 	}
 
-	data := envelope{
-		"comments": comments,
-	}
+// 	data := envelope{
+// 		"comments": comments,
+// 	}
 
-	err = a.writeJSON(w, http.StatusOK, data, nil)
+// 	err = a.writeJSON(w, http.StatusOK, data, nil)
 
-	if err != nil {
-		a.serverErrResponse(w, r, err)
-	}
-}
+// 	if err != nil {
+// 		a.serverErrResponse(w, r, err)
+// 	}
+// }

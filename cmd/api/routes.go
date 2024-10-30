@@ -12,7 +12,12 @@ func (a *appDependencies) routes() http.Handler {
 	router.NotFound = http.HandlerFunc(a.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(a.notAllowedResponse)
 
+	//create product
 	router.HandlerFunc(http.MethodPost, "/createProduct", a.createProduct)
+
+	//display product
+	router.HandlerFunc(http.MethodGet, "/displayProduct/:id", a.displayProduct)
+
 	// router.HandlerFunc(http.MethodGet, "/v1/healthcheck", a.healthCheckHandler)
 	// router.HandlerFunc(http.MethodGet, "/v1/comments/:id", a.displayCommentHandler)
 	// router.HandlerFunc(http.MethodPatch, "/v1/comments/:id", a.updateCommentHandler)

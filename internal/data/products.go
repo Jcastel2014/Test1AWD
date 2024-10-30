@@ -14,6 +14,7 @@ type Product struct {
 	ID             int64     `json:"id"`
 	Name           string    `json:"name"`
 	Description    string    `json:"description"`
+	Price          float64   `json:"price"`
 	Category       string    `json:"category"`
 	Image_url      string    `json:"image_url"`
 	Average_rating float64   `json:"average_rating"`
@@ -47,12 +48,12 @@ func (p ProductModel) Insert(product *Product) error {
 	}
 
 	query = `
-	INSERT INTO products (name, description, category, image_id, average_rating) 
-	VALUES ($1, $2, $3, $4, $5) 
+	INSERT INTO products (name, description, category, image_id, average_rating, price) 
+	VALUES ($1, $2, $3, $4, $5, $6) 
 	RETURNING id, created_at, updated_at`
 
 	//0 is default value for average_rating
-	args = []any{product.Name, product.Description, product.Category, id, 0}
+	args = []any{product.Name, product.Description, product.Category, id, 0, product.Price}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -66,7 +67,7 @@ func (p ProductModel) Get(id int64) (*Product, error) {
 	}
 
 	query := `
-	SELECT P.id, P.name, P.description, P.category, I.image_url, P.average_rating, P.created_at, P.updated_at
+	SELECT P.id, P.name, P.description, P.price, P.category, I.image_url, P.average_rating, P.created_at, P.updated_at
 	FROM products AS P
 	INNER JOIN images AS I ON P.image_id = I.id
 	WHERE P.id = $1;
@@ -77,7 +78,7 @@ func (p ProductModel) Get(id int64) (*Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := p.DB.QueryRowContext(ctx, query, id).Scan(&product.ID, &product.Name, &product.Description, &product.Category, &product.Image_url, &product.Average_rating, &product.Created_at, &product.Updated_at)
+	err := p.DB.QueryRowContext(ctx, query, id).Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Category, &product.Image_url, &product.Average_rating, &product.Created_at, &product.Updated_at)
 
 	if err != nil {
 		switch {

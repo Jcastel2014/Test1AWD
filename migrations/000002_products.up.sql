@@ -25,3 +25,6 @@ CREATE TABLE reviews (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE 
 );
+
+ALTER TABLE products
+ADD COLUMN price DECIMAL(10, 2);

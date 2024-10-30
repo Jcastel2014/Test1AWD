@@ -11,10 +11,11 @@ import (
 
 func (a *appDependencies) createProduct(w http.ResponseWriter, r *http.Request) {
 	var incomingData struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Category    string `json:"category"`
-		Image_url   string `json:"image_url"`
+		Name        string  `json:"name"`
+		Description string  `json:"description"`
+		Category    string  `json:"category"`
+		Image_url   string  `json:"image_url"`
+		Price       float64 `json:"price"`
 	}
 
 	err := a.readJSON(w, r, &incomingData)
@@ -28,6 +29,7 @@ func (a *appDependencies) createProduct(w http.ResponseWriter, r *http.Request) 
 		Description: incomingData.Description,
 		Category:    incomingData.Category,
 		Image_url:   incomingData.Image_url,
+		Price:       incomingData.Price,
 	}
 
 	v := validator.New()
@@ -95,7 +97,7 @@ func (a *appDependencies) displayProduct(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// func (a *appDependencies) updateCommentHandler(w http.ResponseWriter, r *http.Request) {
+// func (a *appDependencies) updateProduct(w http.ResponseWriter, r *http.Request) {
 // 	id, err := a.readIDParam(r)
 
 // 	if err != nil {
@@ -103,7 +105,7 @@ func (a *appDependencies) displayProduct(w http.ResponseWriter, r *http.Request)
 // 		return
 // 	}
 
-// 	comment, err := a.commentModel.Get(id)
+// 	product, err := a.productModel.Get(id)
 
 // 	if err != nil {
 // 		switch {
@@ -117,8 +119,10 @@ func (a *appDependencies) displayProduct(w http.ResponseWriter, r *http.Request)
 // 	}
 
 // 	var incomingData struct {
-// 		Content *string `json:"content"`
-// 		Author  *string `json:"author"`
+// 		Name        string `json:"name"`
+// 		Description string `json:"description"`
+// 		Category    string `json:"category"`
+// 		Image_url   string `json:"image_url"`
 // 	}
 
 // 	err = a.readJSON(w, r, &incomingData)

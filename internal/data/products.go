@@ -140,20 +140,37 @@ func (p ProductModel) GetAll(name string, description string, category string, a
 	return products, metadata, nil
 }
 
-// func (p ProductModel) Update(product *Pr) error {
-// 	query := `
-// 	UPDATE comments
-// 	SET content = $1, author = $2, version = version + 1
-// 	WHERE id = $3
-// 	RETURNING version
-// 	`
+func (p ProductModel) Update(product *Product) error {
 
-// 	args := []any{comment.Content, comment.Author, comment.ID}
-// 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-// 	defer cancel()
+	query := `
+	UPDATE products 
+	SET name =$1, description =$2, category =$3, price =$4
+	WHERE id = $5
+	RETURNING id
+	`
 
-// 	return c.DB.QueryRowContext(ctx, query, args...).Scan(&comment.Version)
-// }
+	args := []any{product.Name, product.Description, product.Category, product.Price, product.ID}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := p.DB.QueryRowContext(ctx, query, args...).Scan(&product.ID)
+
+	if err != nil {
+		return err
+	}
+
+	query = `
+	Update images
+	SET image_url =$1
+	WHERE id = (SELECT image_id FROM products WHERE id = $2)
+	RETURNING id
+	`
+	args = []any{product.Image_url, product.ID}
+	ctx, cancel = context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return p.DB.QueryRowContext(ctx, query, args...).Scan(&product.ID)
+}
 
 func (p ProductModel) Delete(id int64) error {
 	if id < 1 {

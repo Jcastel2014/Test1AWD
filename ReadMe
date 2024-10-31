@@ -4,4 +4,6 @@ a.Create a product
     BODY='{"name":"", "description":"", "category":"", "image_url":""}'	
 
 b.display a product 
-    To display a product you can use 'make displayProduct id=#' replace the # with a number
+    To display a product you can use 'make displayProduct id=#' replace the # with a number 
+
+

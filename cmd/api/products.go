@@ -97,79 +97,88 @@ func (a *appDependencies) displayProduct(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// func (a *appDependencies) updateProduct(w http.ResponseWriter, r *http.Request) {
-// 	id, err := a.readIDParam(r)
+func (a *appDependencies) updateProduct(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
 
-// 	if err != nil {
-// 		a.notFoundResponse(w, r)
-// 		return
-// 	}
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
 
-// 	product, err := a.productModel.Get(id)
+	product, err := a.productModel.Get(id)
 
-// 	if err != nil {
-// 		switch {
-// 		case errors.Is(err, data.ErrRecordNotFound):
-// 			a.notFoundResponse(w, r)
-// 		default:
-// 			a.serverErrResponse(w, r, err)
-// 		}
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrResponse(w, r, err)
+		}
 
-// 		return
-// 	}
+		return
+	}
 
-// 	var incomingData struct {
-// 		Name        *string  `json:"name"`
-// 		Description *string  `json:"description"`
-// 		Category    *string  `json:"category"`
-// 		Image_url   *string  `json:"image_url"`
-// 		Price       *float64 `json:"price"`
-// 	}
+	var incomingData struct {
+		Name        *string  `json:"name"`
+		Description *string  `json:"description"`
+		Category    *string  `json:"category"`
+		Image_url   *string  `json:"image_url"`
+		Price       *float64 `json:"price"`
+	}
 
-// 	err = a.readJSON(w, r, &incomingData)
+	err = a.readJSON(w, r, &incomingData)
 
-// 	if err != nil {
-// 		a.badRequestResponse(w, r, err)
-// 		return
-// 	}
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
 
-// 	if incomingData.Name != nil {
-// 		product.Name = *incomingData.Name
-// 	}
+	if incomingData.Name != nil {
+		product.Name = *incomingData.Name
+	}
 
-// 	if incomingData.Description != nil {
-// 		product.Description = *incomingData.Description
-// 	}
+	if incomingData.Description != nil {
+		product.Description = *incomingData.Description
+	}
 
-// 	if incomingData.Category != nil {
-// 		product.Category = *incomingData.Category
-// 	}
+	if incomingData.Category != nil {
+		product.Category = *incomingData.Category
+	}
 
-// 	if incomingData.Image_url != nil {
-// 		product.Image_url = *incomingData.Image_url
-// 	}
+	if incomingData.Image_url != nil {
+		product.Image_url = *incomingData.Image_url
+	}
 
-// 	if incomingData.Price != nil {
-// 		product.Price = *incomingData.Price
-// 	}
+	if incomingData.Price != nil {
+		product.Price = *incomingData.Price
+	}
 
-// 	err = a.productModel.Update(product)
+	v := validator.New()
 
-// 	if err != nil {
-// 		a.serverErrResponse(w, r, err)
-// 		return
-// 	}
+	data.ValidateProduct(v, product, 1)
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
 
-// 	data := envelope{
-// 		"product": product,
-// 	}
+		return
+	}
 
-// 	err = a.writeJSON(w, http.StatusOK, data, nil)
-// 	if err != nil {
-// 		a.serverErrResponse(w, r, err)
-// 		return
-// 	}
-// }
+	err = a.productModel.Update(product)
+
+	if err != nil {
+		a.serverErrResponse(w, r, err)
+		return
+	}
+
+	data := envelope{
+		"product": product,
+	}
+
+	err = a.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		a.serverErrResponse(w, r, err)
+		return
+	}
+}
 
 func (a *appDependencies) deleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := a.readIDParam(r)

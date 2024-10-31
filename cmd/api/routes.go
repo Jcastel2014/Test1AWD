@@ -18,6 +18,11 @@ func (a *appDependencies) routes() http.Handler {
 	//display product
 	router.HandlerFunc(http.MethodGet, "/displayProduct/:id", a.displayProduct)
 
+	//deltee product
+	router.HandlerFunc(http.MethodDelete, "/deleteProduct/:id", a.deleteProduct)
+
+	router.HandlerFunc(http.MethodGet, "/displayAllProducts", a.displayAllProducts)
+
 	//update
 	// router.HandlerFunc(http.MethodPatch, "/updateProduct/:id", a.updateProduct)
 
@@ -25,7 +30,7 @@ func (a *appDependencies) routes() http.Handler {
 	// router.HandlerFunc(http.MethodGet, "/v1/comments/:id", a.displayCommentHandler)
 	// router.HandlerFunc(http.MethodPatch, "/v1/comments/:id", a.updateCommentHandler)
 	// router.HandlerFunc(http.MethodPost, "/v1/comments", a.createCommentHandler)
-	// router.HandlerFunc(http.MethodDelete, "/v1/comments/:id", a.deleteCommentHandler)
+
 	// router.HandlerFunc(http.MethodGet, "/v1/comments", a.listCommentsHandler)
 	return a.recoverPanic(router)
 }

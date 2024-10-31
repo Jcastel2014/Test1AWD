@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -91,49 +92,55 @@ func (p ProductModel) Get(id int64) (*Product, error) {
 	return &product, nil
 }
 
-// func (c CommentModel) GetAll(content string, author string, filters Filters) ([]*Comment, error) {
-// 	query := `
-// 	SELECT id, created_at, content, author, version
-// 	FROM comments
-// 	WHERE (to_tsvector('simple', content) @@
-// 		plainto_tsquery('simple', $1) OR $1 = '')
-//     AND (to_tsvector('simple', author) @@
-// 		plainto_tsquery('simple', $2) OR $2 = '')
-// 	ORDER BY id
-// 	LIMIT $3 OFFSET $4
-// 	`
+func (p ProductModel) GetAll(name string, description string, category string, average_rating string, filters Filters) ([]*Product, Metadata, error) {
+	query := fmt.Sprintf(`
+	SELECT COUNT(*) OVER(), id, name, description, category, image_id, average_rating, created_at, updated_at
+	FROM products
+	WHERE (to_tsvector('simple', name) @@
+		plainto_tsquery('simple', $1) OR $1 = '')
+    AND (to_tsvector('simple', description) @@
+		plainto_tsquery('simple', $2) OR $2 = '')
+	AND (to_tsvector('simple', category) @@
+		plainto_tsquery('simple', $3) OR $3 = '')
+	ORDER BY %s %s, id ASC 
+        LIMIT $4 OFFSET $5`, filters.sortColumn(), filters.sortDirection())
 
-// 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-// 	defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
-// 	rows, err := c.DB.QueryContext(ctx, query, content, author, filters.limit(), filters.offset())
+	rows, err := p.DB.QueryContext(ctx, query, name, description, category, filters.limit(), filters.offset())
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	if err != nil {
+		return nil, Metadata{}, err
+	}
 
-// 	comments := []*Comment{}
+	defer rows.Close()
+	totalRecords := 0
 
-// 	for rows.Next() {
-// 		var comment Comment
-// 		err := rows.Scan(&comment.ID, &comment.CreatedAt, &comment.Content, &comment.Author, &comment.Version)
+	products := []*Product{}
 
-// 		if err != nil {
-// 			return nil, err
-// 		}
+	for rows.Next() {
+		var product Product
+		err := rows.Scan(&totalRecords, &product.ID, &product.Name, &product.Description, &product.Category, &product.Image_url, &product.Average_rating, &product.Created_at, &product.Updated_at)
 
-// 		comments = append(comments, &comment)
-// 	}
+		if err != nil {
+			return nil, Metadata{}, err
+		}
 
-// 	err = rows.Err()
-// 	if err != nil {
-// 		return nil, err
-// 	}
+		products = append(products, &product)
+	}
 
-// 	return comments, nil
-// }
+	err = rows.Err()
+	if err != nil {
+		return nil, Metadata{}, err
+	}
 
-// func (c CommentModel) Update(comment *Comment) error {
+	metadata := calculateMetaData(totalRecords, filters.Page, filters.PageSize)
+
+	return products, metadata, nil
+}
+
+// func (p ProductModel) Update(product *Pr) error {
 // 	query := `
 // 	UPDATE comments
 // 	SET content = $1, author = $2, version = version + 1
@@ -148,35 +155,35 @@ func (p ProductModel) Get(id int64) (*Product, error) {
 // 	return c.DB.QueryRowContext(ctx, query, args...).Scan(&comment.Version)
 // }
 
-// func (c CommentModel) Delete(id int64) error {
-// 	if id < 1 {
-// 		return ErrRecordNotFound
-// 	}
+func (p ProductModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
 
-// 	query := `
-// 	DELETE FROM comment
-// 	WHERE id =$1
-// 	`
+	query := `
+	DELETE FROM products
+	WHERE id =$1
+	`
 
-// 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-// 	defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
-// 	result, err := c.DB.ExecContext(ctx, query, id)
-// 	if err != nil {
-// 		return err
-// 	}
+	result, err := p.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
 
-// 	rowsAffected, err := result.RowsAffected()
-// 	if err != nil {
-// 		return err
-// 	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
 
-// 	if rowsAffected == 0 {
-// 		return ErrRecordNotFound
-// 	}
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
 func ValidateProduct(v *validator.Validator, product *Product, handlerId int) {
 
